@@ -570,8 +570,17 @@ func TestProxyClose(t *testing.T) {
 
 	errCh := make(chan error)
 	go func() {
-		err := testProxy.Start()
-		errCh <- err
+		go func() {
+			if err := testProxy.StartAttack(); err != nil {
+				errCh <- err
+			}
+		}()
+		ln, err := testProxy.Listen()
+		if err != nil {
+			errCh <- err
+			return
+		}
+		errCh <- testProxy.Serve(ln)
 	}()
 
 	time.Sleep(time.Millisecond * 10) // wait for test proxy startup
@@ -611,8 +620,17 @@ func TestProxyShutdown(t *testing.T) {
 
 	errCh := make(chan error)
 	go func() {
-		err := testProxy.Start()
-		errCh <- err
+		go func() {
+			if err := testProxy.StartAttack(); err != nil {
+				errCh <- err
+			}
+		}()
+		ln, err := testProxy.Listen()
+		if err != nil {
+			errCh <- err
+			return
+		}
+		errCh <- testProxy.Serve(ln)
 	}()
 
 	time.Sleep(time.Millisecond * 10) // wait for test proxy startup

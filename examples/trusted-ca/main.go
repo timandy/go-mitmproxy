@@ -26,7 +26,7 @@ func main() {
 		return host == "your-domain.xx.com" || host == "your-domain2.xx.com" // filter your-domain
 	})
 	p.AddAddon(&YourAddOn{})
-	log.Fatal(p.Start())
+	p.Start()
 }
 
 type YourAddOn struct {
