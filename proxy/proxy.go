@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -28,12 +29,20 @@ type Options struct {
 	ShutdownTimeout   time.Duration // 服务关闭超时时间
 }
 
+type StartCallback func(net.Listener) error
+
+type ShutdownCallback func()
+
 type Proxy struct {
 	Opts      *Options
 	Version   string
 	Addons    []Addon
 	errorChan chan error
 	quitChan  chan os.Signal
+
+	onStart    []StartCallback
+	onShutdown []ShutdownCallback
+	eventLock  sync.Mutex
 
 	entry           *entry
 	attacker        *attacker
@@ -95,6 +104,11 @@ func (proxy *Proxy) Start() {
 			return
 		}
 		log.Infof("Proxy already listen at %v", ln.Addr().(*net.TCPAddr).Port)
+		err = proxy.fireOnStart(ln)
+		if err != nil {
+			proxy.errorChan <- err
+			return
+		}
 		proxy.errorChan <- proxy.Serve(ln)
 	}()
 
@@ -114,6 +128,7 @@ func (proxy *Proxy) Start() {
 			shutdownCtx = context.Background()
 		}
 		shutdownErr := proxy.Shutdown(shutdownCtx)
+		proxy.fireOnShutdown()
 		if shutdownErr != nil {
 			_ = proxy.Close()
 			log.Errorf("Proxy already forced shutdown, %v", shutdownErr)
@@ -161,6 +176,44 @@ func (proxy *Proxy) SetShouldInterceptRule(rule func(req *http.Request) bool) {
 
 func (proxy *Proxy) SetUpstreamProxy(fn func(req *http.Request) (*url.URL, error)) {
 	proxy.upstreamProxy = fn
+}
+
+func (proxy *Proxy) RegisterOnStart(f StartCallback) {
+	if f == nil {
+		return
+	}
+	proxy.eventLock.Lock()
+	defer proxy.eventLock.Unlock()
+	proxy.onStart = append(proxy.onStart, f)
+}
+
+func (proxy *Proxy) RegisterOnShutdown(f ShutdownCallback) {
+	if f == nil {
+		return
+	}
+	proxy.eventLock.Lock()
+	defer proxy.eventLock.Unlock()
+	proxy.onShutdown = append(proxy.onShutdown, f)
+}
+
+func (proxy *Proxy) fireOnStart(ln net.Listener) error {
+	proxy.eventLock.Lock()
+	defer proxy.eventLock.Unlock()
+	for _, f := range proxy.onStart {
+		err := f(ln)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (proxy *Proxy) fireOnShutdown() {
+	proxy.eventLock.Lock()
+	defer proxy.eventLock.Unlock()
+	for _, f := range proxy.onShutdown {
+		f()
+	}
 }
 
 func (proxy *Proxy) realUpstreamProxy() func(*http.Request) (*url.URL, error) {
