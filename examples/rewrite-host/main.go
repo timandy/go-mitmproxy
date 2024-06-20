@@ -14,7 +14,7 @@ func (a *RewriteHost) ClientConnected(client *proxy.ClientConn) {
 	client.UpstreamCert = false
 }
 
-func (a *RewriteHost) Requestheaders(f *proxy.Flow) {
+func (a *RewriteHost) Request(f *proxy.Flow) {
 	log.Infof("Host: %v, Method: %v, Scheme: %v", f.Request.URL.Host, f.Request.Method, f.Request.URL.Scheme)
 	f.Request.URL.Host = "www.baidu.com"
 	f.Request.URL.Scheme = "http"

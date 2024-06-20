@@ -97,7 +97,7 @@ type MapLocal struct {
 	Enable bool
 }
 
-func (ml *MapLocal) Requestheaders(f *proxy.Flow) {
+func (ml *MapLocal) Request(f *proxy.Flow) {
 	if !ml.Enable {
 		return
 	}

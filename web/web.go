@@ -122,7 +122,7 @@ func (web *WebAddon) sendFlow(f *proxy.Flow, msgFn func() *messageFlow) bool {
 	return true
 }
 
-func (web *WebAddon) Requestheaders(f *proxy.Flow) {
+func (web *WebAddon) Request(f *proxy.Flow) {
 	if f.ConnContext.ClientConn.Tls {
 		web.forEachConn(func(c *concurrentConn) {
 			c.trySendConnMessage(f)
@@ -132,15 +132,12 @@ func (web *WebAddon) Requestheaders(f *proxy.Flow) {
 	web.sendFlow(f, func() *messageFlow {
 		return newMessageFlow(messageTypeRequest, f)
 	})
-}
-
-func (web *WebAddon) Request(f *proxy.Flow) {
 	web.sendFlow(f, func() *messageFlow {
 		return newMessageFlow(messageTypeRequestBody, f)
 	})
 }
 
-func (web *WebAddon) Responseheaders(f *proxy.Flow) {
+func (web *WebAddon) Response(f *proxy.Flow) {
 	if !f.ConnContext.ClientConn.Tls {
 		web.forEachConn(func(c *concurrentConn) {
 			c.trySendConnMessage(f)
@@ -150,9 +147,6 @@ func (web *WebAddon) Responseheaders(f *proxy.Flow) {
 	web.sendFlow(f, func() *messageFlow {
 		return newMessageFlow(messageTypeResponse, f)
 	})
-}
-
-func (web *WebAddon) Response(f *proxy.Flow) {
 	web.sendFlow(f, func() *messageFlow {
 		return newMessageFlow(messageTypeResponseBody, f)
 	})

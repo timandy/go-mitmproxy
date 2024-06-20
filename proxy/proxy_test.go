@@ -214,37 +214,15 @@ func (addon *testOrderAddon) TlsEstablishedServer(*ConnContext) {
 	defer addon.mu.Unlock()
 	addon.orders = append(addon.orders, "TlsEstablishedServer")
 }
-func (addon *testOrderAddon) Requestheaders(*Flow) {
-	addon.mu.Lock()
-	defer addon.mu.Unlock()
-	addon.orders = append(addon.orders, "Requestheaders")
-}
 func (addon *testOrderAddon) Request(*Flow) {
 	addon.mu.Lock()
 	defer addon.mu.Unlock()
 	addon.orders = append(addon.orders, "Request")
 }
-func (addon *testOrderAddon) Responseheaders(*Flow) {
-	addon.mu.Lock()
-	defer addon.mu.Unlock()
-	addon.orders = append(addon.orders, "Responseheaders")
-}
 func (addon *testOrderAddon) Response(*Flow) {
 	addon.mu.Lock()
 	defer addon.mu.Unlock()
 	addon.orders = append(addon.orders, "Response")
-}
-func (addon *testOrderAddon) StreamRequestModifier(f *Flow, in io.Reader) io.Reader {
-	addon.mu.Lock()
-	defer addon.mu.Unlock()
-	addon.orders = append(addon.orders, "StreamRequestModifier")
-	return in
-}
-func (addon *testOrderAddon) StreamResponseModifier(f *Flow, in io.Reader) io.Reader {
-	addon.mu.Lock()
-	defer addon.mu.Unlock()
-	addon.orders = append(addon.orders, "StreamResponseModifier")
-	return in
 }
 
 func TestProxy(t *testing.T) {
@@ -678,7 +656,7 @@ func TestOnUpstreamCert(t *testing.T) {
 		testOrderAddonInstance.reset()
 		testSendRequest(t, httpEndpoint, proxyClient, "ok")
 		time.Sleep(time.Millisecond * 10)
-		testOrderAddonInstance.before(t, "Requestheaders", "ServerConnected")
+		testOrderAddonInstance.before(t, "Request", "ServerConnected")
 	})
 
 	t.Run("https", func(t *testing.T) {
@@ -686,7 +664,7 @@ func TestOnUpstreamCert(t *testing.T) {
 		testOrderAddonInstance.reset()
 		testSendRequest(t, httpsEndpoint, proxyClient, "ok")
 		time.Sleep(time.Millisecond * 10)
-		testOrderAddonInstance.before(t, "ServerConnected", "Requestheaders")
+		testOrderAddonInstance.before(t, "ServerConnected", "Request")
 		testOrderAddonInstance.contains(t, "TlsEstablishedServer")
 	})
 
@@ -718,7 +696,7 @@ func TestOffUpstreamCert(t *testing.T) {
 		testOrderAddonInstance.reset()
 		testSendRequest(t, httpEndpoint, proxyClient, "ok")
 		time.Sleep(time.Millisecond * 10)
-		testOrderAddonInstance.before(t, "Requestheaders", "ServerConnected")
+		testOrderAddonInstance.before(t, "Request", "ServerConnected")
 	})
 
 	t.Run("https", func(t *testing.T) {
@@ -726,7 +704,7 @@ func TestOffUpstreamCert(t *testing.T) {
 		testOrderAddonInstance.reset()
 		testSendRequest(t, httpsEndpoint, proxyClient, "ok")
 		time.Sleep(time.Millisecond * 10)
-		testOrderAddonInstance.before(t, "Requestheaders", "ServerConnected")
+		testOrderAddonInstance.before(t, "Request", "ServerConnected")
 		testOrderAddonInstance.contains(t, "TlsEstablishedServer")
 	})
 }

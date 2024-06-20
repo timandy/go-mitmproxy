@@ -8,7 +8,7 @@ import (
 //
 // When the proxy forwards HTTPS requests, go-mitmproxy by default initiates an SSL connection with the target server first.
 // 1. If you do not want to establish a connection with the target server, such as:
-//    Generating a response directly in the RequestHeaders or Request Hook and returning it to the client.
+//    Generating a response directly in the Request Hook and returning it to the client.
 // 2. Or if you want the proxy to establish a connect connection with the client first, delaying the connection with the target service until a real HTTPS request is made.
 //
 // => Then you can refer to the following code
@@ -17,7 +17,7 @@ import (
 //
 // 当代理 https 请求时，go-mitmproxy 默认会先和目标服务器建立 SSL 连接
 // 1. 如果你并不和目标服务器建立连接，如：
-//    在 Requestheaders 或 Request Hook 中直接生成 Response，返回给客户端
+//    在 Request Hook 中直接生成 Response，返回给客户端
 // 2. 或者想让中间人先和客户端成功建立 connect 连接，推迟至真正发起 https 请求时中间人和目标服务再建立连接
 //
 // => 那么你可以参考下面代码
@@ -32,7 +32,7 @@ func (a *CloseConn) ClientConnected(client *proxy.ClientConn) {
 	client.UpstreamCert = false
 }
 
-func (a *CloseConn) Requestheaders(f *proxy.Flow) {
+func (a *CloseConn) Request(f *proxy.Flow) {
 	// give some response to client
 	// then will not request remote server
 	f.Response = &proxy.Response{
