@@ -21,7 +21,7 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	"github.com/golang/groupcache/singleflight"
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 // reference

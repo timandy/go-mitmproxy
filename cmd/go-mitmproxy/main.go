@@ -8,9 +8,10 @@ import (
 
 	"github.com/lqqyt2423/go-mitmproxy/addon"
 	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 	"github.com/lqqyt2423/go-mitmproxy/proxy"
 	"github.com/lqqyt2423/go-mitmproxy/web"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -38,15 +39,15 @@ func main() {
 
 	if config.Debug > 0 {
 		rawLog.SetFlags(rawLog.LstdFlags | rawLog.Lshortfile)
-		log.SetLevel(log.DebugLevel)
+		logrus.SetLevel(logrus.DebugLevel)
 	} else {
-		log.SetLevel(log.InfoLevel)
+		logrus.SetLevel(logrus.InfoLevel)
 	}
 	if config.Debug == 2 {
-		log.SetReportCaller(true)
+		logrus.SetReportCaller(true)
 	}
-	log.SetOutput(os.Stdout)
-	log.SetFormatter(&log.TextFormatter{
+	logrus.SetOutput(os.Stdout)
+	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
 
@@ -84,7 +85,7 @@ func main() {
 
 	if !config.UpstreamCert {
 		p.AddAddon(proxy.NewUpstreamCertAddon(false))
-		log.Infoln("UpstreamCert config false")
+		log.Info("UpstreamCert config false")
 	}
 
 	p.AddAddon(&proxy.LogAddon{})

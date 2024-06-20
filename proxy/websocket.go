@@ -6,7 +6,7 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 // 当前仅做了转发 websocket 流量
@@ -21,7 +21,7 @@ var defaultWebSocket webSocket
 // 	defer conn.Close()
 // 	remoteConn, err := net.Dial("tcp", host)
 // 	if err != nil {
-// 		logErr(log, err)
+// 		logErr(err)
 // 		return
 // 	}
 // 	defer remoteConn.Close()
@@ -29,8 +29,6 @@ var defaultWebSocket webSocket
 // }
 
 func (s *webSocket) wss(res http.ResponseWriter, req *http.Request) {
-	log := log.WithField("in", "webSocket.wss").WithField("host", req.Host)
-
 	upgradeBuf, err := httputil.DumpRequest(req, false)
 	if err != nil {
 		log.Errorf("DumpRequest: %v\n", err)
@@ -62,5 +60,5 @@ func (s *webSocket) wss(res http.ResponseWriter, req *http.Request) {
 		log.Errorf("wss upgrade: %v\n", err)
 		return
 	}
-	transfer(log, conn, cconn)
+	transfer(conn, cconn)
 }

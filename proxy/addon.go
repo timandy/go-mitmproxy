@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 type Addon interface {

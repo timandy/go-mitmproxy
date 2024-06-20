@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/lqqyt2423/go-mitmproxy/log"
 	"github.com/lqqyt2423/go-mitmproxy/proxy"
-	log "github.com/sirupsen/logrus"
 )
 
 type RewriteHost struct {
@@ -15,10 +15,10 @@ func (a *RewriteHost) ClientConnected(client *proxy.ClientConn) {
 }
 
 func (a *RewriteHost) Requestheaders(f *proxy.Flow) {
-	log.Printf("Host: %v, Method: %v, Scheme: %v", f.Request.URL.Host, f.Request.Method, f.Request.URL.Scheme)
+	log.Infof("Host: %v, Method: %v, Scheme: %v", f.Request.URL.Host, f.Request.Method, f.Request.URL.Scheme)
 	f.Request.URL.Host = "www.baidu.com"
 	f.Request.URL.Scheme = "http"
-	log.Printf("After: %v", f.Request.URL)
+	log.Infof("After: %v", f.Request.URL)
 }
 
 func main() {
