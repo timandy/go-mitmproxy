@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/http"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"go.uber.org/atomic"
 )
 
@@ -23,7 +23,7 @@ type ClientConn struct {
 
 func newClientConn(c net.Conn) *ClientConn {
 	return &ClientConn{
-		Id:           uuid.NewV4(),
+		Id:           uuid.New(),
 		Conn:         c,
 		Tls:          false,
 		UpstreamCert: true,
@@ -51,7 +51,7 @@ type ServerConn struct {
 
 func newServerConn() *ServerConn {
 	return &ServerConn{
-		Id: uuid.NewV4(),
+		Id: uuid.New(),
 	}
 }
 
