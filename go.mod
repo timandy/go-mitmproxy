@@ -12,6 +12,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/match v1.1.1
+	github.com/timandy/routine v1.1.3
 	go.uber.org/atomic v1.11.0
 	golang.org/x/net v0.26.0
 )

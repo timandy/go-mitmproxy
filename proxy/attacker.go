@@ -11,6 +11,7 @@ import (
 	"github.com/lqqyt2423/go-mitmproxy/cert"
 	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
 	"github.com/lqqyt2423/go-mitmproxy/log"
+	"github.com/timandy/routine"
 	"golang.org/x/net/http2"
 )
 
@@ -432,7 +433,7 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	// when addons panic
 	defer func() {
 		if err := recover(); err != nil {
-			log.Warnf("Recovered: %v", err)
+			log.Warnf("Recovered: %v", routine.NewRuntimeError(err))
 		}
 	}()
 
