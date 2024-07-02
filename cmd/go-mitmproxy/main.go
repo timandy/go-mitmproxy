@@ -70,7 +70,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Infof("go-mitmproxy version %v\n", p.Version)
+	log.Infof("go-mitmproxy version %v", p.Version)
 
 	if len(config.IgnoreHosts) > 0 {
 		p.SetShouldInterceptRule(func(req *http.Request) bool {

@@ -432,7 +432,7 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	// when addons panic
 	defer func() {
 		if err := recover(); err != nil {
-			log.Warnf("Recovered: %v\n", err)
+			log.Warnf("Recovered: %v", err)
 		}
 	}()
 
