@@ -193,14 +193,24 @@ func (e *entry) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// direct transfer
+	shouldIntercept := e.shouldHandle(req)
+	if !shouldIntercept {
+		transferHttp(res, req)
+		return
+	}
 	// http proxy
 	proxy.attacker.initHttpDialFn(req)
 	proxy.attacker.attack(res, req)
 }
 
-func (e *entry) handleConnect(res http.ResponseWriter, req *http.Request) {
+func (e *entry) shouldHandle(req *http.Request) bool {
 	proxy := e.proxy
-	shouldIntercept := proxy.shouldIntercept == nil || proxy.shouldIntercept(req)
+	return proxy.shouldIntercept == nil || proxy.shouldIntercept(req)
+}
+
+func (e *entry) handleConnect(res http.ResponseWriter, req *http.Request) {
+	shouldIntercept := e.shouldHandle(req)
 	f := newFlow()
 	f.Request = newRequest(req)
 	f.ConnContext = req.Context().Value(connContextKey).(*ConnContext)
