@@ -34,7 +34,7 @@ func logErr(err error) (loged bool) {
 		}
 	}
 
-	log.Error(err)
+	log.Debug(err)
 	loged = true
 	return
 }
