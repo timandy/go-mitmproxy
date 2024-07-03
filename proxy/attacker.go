@@ -448,12 +448,11 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	for _, addon := range proxy.Addons {
 		addon.BeginFlow(f)
 	}
-	defer func() {
-		//响应完成
-		for _, addon := range proxy.Addons {
-			addon.EndFlow(f)
-		}
-	}()
+	//响应完成
+	for _, addon := range proxy.Addons {
+		//goland:noinspection GoDeferInLoop
+		defer addon.EndFlow(f)
+	}
 
 	// read host, scheme
 	rawReqUrlHost := f.Request.URL.Host
