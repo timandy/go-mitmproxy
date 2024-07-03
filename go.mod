@@ -11,6 +11,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/match v1.1.1
+	github.com/timandy/routine v1.1.3
 	go.uber.org/atomic v1.11.0
 	golang.org/x/net v0.22.0
 )
