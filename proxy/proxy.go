@@ -162,6 +162,15 @@ func (proxy *Proxy) Shutdown(ctx context.Context) error {
 	return proxy.entry.shutdown(ctx)
 }
 
+func (proxy *Proxy) DoRequest(w http.ResponseWriter, r *http.Request) {
+	connCtx := &ConnContext{proxy: proxy, closeAfterResponse: true}
+	ctx := context.WithValue(r.Context(), proxyReqCtxKey, connCtx)
+	req := r.WithContext(ctx)
+	atk := proxy.attacker
+	atk.initHttpDialFn(req)
+	atk.attack(w, req)
+}
+
 func (proxy *Proxy) GetCertificate() x509.Certificate {
 	return *proxy.attacker.ca.GetRootCA()
 }
