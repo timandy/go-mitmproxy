@@ -399,37 +399,6 @@ func (a *attacker) httpsLazyAttack(ctx context.Context, cconn net.Conn, req *htt
 }
 
 func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
-	proxy := a.proxy
-	reply := func(response *Response) {
-		if response.Header != nil {
-			for key, value := range response.Header {
-				for _, v := range value {
-					res.Header().Add(key, v)
-				}
-			}
-		}
-		if response.close {
-			res.Header().Add("Connection", "close")
-		}
-		res.WriteHeader(response.StatusCode)
-		if response.BodyReader != nil {
-			_, err := io.Copy(res, response.BodyReader)
-			if err != nil {
-				logErr(err)
-			}
-			// close the reader
-			if closer, ok := response.BodyReader.(io.Closer); ok {
-				_ = closer.Close()
-			}
-		}
-		if response.Body != nil && len(response.Body) > 0 {
-			_, err := res.Write(response.Body)
-			if err != nil {
-				logErr(err)
-			}
-		}
-	}
-
 	// when addons panic
 	defer func() {
 		if err := recover(); err != nil {
@@ -444,11 +413,18 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 
 	f.ConnContext.FlowCount.Add(1)
 
+	//执行拦截并写回
+	a.execute(f)
+	a.write(res, f.Response)
+}
+
+func (a *attacker) execute(f *Flow) {
+	proxy := a.proxy
 	//请求开始
 	for _, addon := range proxy.Addons {
 		addon.BeginFlow(f)
 	}
-	//响应完成
+	//响应完成; 此时还未写回, 可以在 EndFlow 做最后的处理
 	for _, addon := range proxy.Addons {
 		//goland:noinspection GoDeferInLoop
 		defer addon.EndFlow(f)
@@ -462,25 +438,28 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	for _, addon := range proxy.Addons {
 		addon.Request(f)
 		if f.Response != nil {
-			reply(f.Response)
 			return
 		}
 	}
 
+	//prepare proxy request
+	req := f.Request.raw
 	proxyReqCtx := context.WithValue(req.Context(), proxyReqCtxKey, req)
 	proxyReq, err := http.NewRequestWithContext(proxyReqCtx, f.Request.Method, f.Request.URL.String(), req.Body)
 	if err != nil {
 		log.Error(err)
-		res.WriteHeader(502)
+		f.Response = &Response{StatusCode: 502}
 		return
 	}
 
+	//write header to proxy request
 	for key, value := range f.Request.Header {
 		for _, v := range value {
 			proxyReq.Header.Add(key, v)
 		}
 	}
 
+	//use separate client or not
 	useSeparateClient := f.UseSeparateClient
 	if !useSeparateClient {
 		if rawReqUrlHost != f.Request.URL.Host || rawReqUrlScheme != f.Request.URL.Scheme {
@@ -488,6 +467,7 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	//do request
 	var proxyRes *http.Response
 	if useSeparateClient {
 		proxyRes, err = a.client.Do(proxyReq)
@@ -495,7 +475,7 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		if f.ConnContext.ServerConn == nil && f.ConnContext.dialFn != nil {
 			if err := f.ConnContext.dialFn(req.Context()); err != nil {
 				log.Error(err)
-				res.WriteHeader(502)
+				f.Response = &Response{StatusCode: 502}
 				return
 			}
 		}
@@ -503,14 +483,16 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	}
 	if err != nil {
 		logErr(err)
-		res.WriteHeader(502)
+		f.Response = &Response{StatusCode: 502}
 		return
 	}
 
+	//save close flag
 	if proxyRes.Close {
 		f.ConnContext.closeAfterResponse = true
 	}
 
+	//construct response object
 	f.Response = &Response{
 		StatusCode: proxyRes.StatusCode,
 		Header:     proxyRes.Header,
@@ -522,6 +504,34 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	for _, addon := range proxy.Addons {
 		addon.Response(f)
 	}
+}
 
-	reply(f.Response)
+func (a *attacker) write(res http.ResponseWriter, response *Response) {
+	if response.Header != nil {
+		for key, value := range response.Header {
+			for _, v := range value {
+				res.Header().Add(key, v)
+			}
+		}
+	}
+	if response.close {
+		res.Header().Add("Connection", "close")
+	}
+	res.WriteHeader(response.StatusCode)
+	if response.BodyReader != nil {
+		_, err := io.Copy(res, response.BodyReader)
+		if err != nil {
+			logErr(err)
+		}
+		// close the reader
+		if closer, ok := response.BodyReader.(io.Closer); ok {
+			_ = closer.Close()
+		}
+	}
+	if response.Body != nil && len(response.Body) > 0 {
+		_, err := res.Write(response.Body)
+		if err != nil {
+			logErr(err)
+		}
+	}
 }
