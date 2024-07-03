@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 // wrap tcpListener for remote client
@@ -72,7 +72,7 @@ func (c *wrapClientConn) Close() error {
 		c.closeMu.Unlock()
 		return c.closeErr
 	}
-	log.Debugln("in wrapClientConn close", c.connCtx.ClientConn.Conn.RemoteAddr())
+	log.Debug("in wrapClientConn close", c.connCtx.ClientConn.Conn.RemoteAddr())
 
 	c.closed = true
 	c.closeErr = c.Conn.Close()
@@ -107,7 +107,7 @@ func (c *wrapServerConn) Close() error {
 		c.closeMu.Unlock()
 		return c.closeErr
 	}
-	log.Debugln("in wrapServerConn close", c.connCtx.ClientConn.Conn.RemoteAddr())
+	log.Debug("in wrapServerConn close", c.connCtx.ClientConn.Conn.RemoteAddr())
 
 	c.closed = true
 	c.closeErr = c.Conn.Close()
@@ -202,12 +202,6 @@ func (e *entry) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 func (e *entry) handleConnect(res http.ResponseWriter, req *http.Request) {
 	proxy := e.proxy
-
-	log := log.WithFields(log.Fields{
-		"in":   "Proxy.entry.handleConnect",
-		"host": req.Host,
-	})
-
 	shouldIntercept := proxy.shouldIntercept == nil || proxy.shouldIntercept(req)
 	f := newFlow()
 	f.Request = newRequest(req)
@@ -262,11 +256,6 @@ func (e *entry) establishConnection(res http.ResponseWriter, f *Flow) (net.Conn,
 
 func (e *entry) directTransfer(res http.ResponseWriter, req *http.Request, f *Flow) {
 	proxy := e.proxy
-	log := log.WithFields(log.Fields{
-		"in":   "Proxy.entry.directTransfer",
-		"host": req.Host,
-	})
-
 	conn, err := proxy.getUpstreamConn(req.Context(), req)
 	if err != nil {
 		log.Error(err)
@@ -282,16 +271,11 @@ func (e *entry) directTransfer(res http.ResponseWriter, req *http.Request, f *Fl
 	}
 	defer cconn.Close()
 
-	transfer(log, conn, cconn)
+	transfer(conn, cconn)
 }
 
 func (e *entry) httpsDialFirstAttack(res http.ResponseWriter, req *http.Request, f *Flow) {
 	proxy := e.proxy
-	log := log.WithFields(log.Fields{
-		"in":   "Proxy.entry.httpsDialFirstAttack",
-		"host": req.Host,
-	})
-
 	conn, err := proxy.attacker.httpsDial(req.Context(), req)
 	if err != nil {
 		log.Error(err)
@@ -315,7 +299,7 @@ func (e *entry) httpsDialFirstAttack(res http.ResponseWriter, req *http.Request,
 	}
 	if !helper.IsTls(peek) {
 		// todo: http, ws
-		transfer(log, conn, cconn)
+		transfer(conn, cconn)
 		cconn.Close()
 		conn.Close()
 		return
@@ -328,11 +312,6 @@ func (e *entry) httpsDialFirstAttack(res http.ResponseWriter, req *http.Request,
 
 func (e *entry) httpsDialLazyAttack(res http.ResponseWriter, req *http.Request, f *Flow) {
 	proxy := e.proxy
-	log := log.WithFields(log.Fields{
-		"in":   "Proxy.entry.httpsDialLazyAttack",
-		"host": req.Host,
-	})
-
 	cconn, err := e.establishConnection(res, f)
 	if err != nil {
 		log.Error(err)
@@ -354,7 +333,7 @@ func (e *entry) httpsDialLazyAttack(res http.ResponseWriter, req *http.Request, 
 			log.Error(err)
 			return
 		}
-		transfer(log, conn, cconn)
+		transfer(conn, cconn)
 		conn.Close()
 		cconn.Close()
 		return

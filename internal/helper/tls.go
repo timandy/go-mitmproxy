@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 // Wireshark 解析 https 设置

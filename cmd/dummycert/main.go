@@ -8,7 +8,8 @@ import (
 	"os"
 
 	"github.com/lqqyt2423/go-mitmproxy/cert"
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
+	"github.com/sirupsen/logrus"
 )
 
 // 生成假的/用于测试的服务器证书
@@ -25,10 +26,10 @@ func loadConfig() *Config {
 }
 
 func main() {
-	log.SetLevel(log.InfoLevel)
-	log.SetReportCaller(false)
-	log.SetOutput(os.Stdout)
-	log.SetFormatter(&log.TextFormatter{
+	logrus.SetLevel(logrus.InfoLevel)
+	logrus.SetReportCaller(false)
+	logrus.SetOutput(os.Stdout)
+	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
 

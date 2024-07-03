@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/lqqyt2423/go-mitmproxy/log"
 	"github.com/lqqyt2423/go-mitmproxy/proxy"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 )
 
 // message:

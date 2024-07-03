@@ -11,7 +11,7 @@ import (
 
 	"github.com/lqqyt2423/go-mitmproxy/cert"
 	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 	"golang.org/x/net/http2"
 )
 
@@ -293,11 +293,6 @@ func (a *attacker) httpsDial(ctx context.Context, req *http.Request) (net.Conn, 
 
 func (a *attacker) httpsTlsDial(ctx context.Context, cconn net.Conn, conn net.Conn) {
 	connCtx := cconn.(*wrapClientConn).connCtx
-	log := log.WithFields(log.Fields{
-		"in":   "Proxy.attacker.httpsTlsDial",
-		"host": connCtx.ClientConn.Conn.RemoteAddr().String(),
-	})
-
 	var clientHello *tls.ClientHelloInfo
 	clientHelloChan := make(chan *tls.ClientHelloInfo)
 	serverTlsStateChan := make(chan *tls.ConnectionState)
@@ -377,11 +372,6 @@ func (a *attacker) httpsTlsDial(ctx context.Context, cconn net.Conn, conn net.Co
 
 func (a *attacker) httpsLazyAttack(ctx context.Context, cconn net.Conn, req *http.Request) {
 	connCtx := cconn.(*wrapClientConn).connCtx
-	log := log.WithFields(log.Fields{
-		"in":   "Proxy.attacker.httpsLazyAttack",
-		"host": connCtx.ClientConn.Conn.RemoteAddr().String(),
-	})
-
 	clientTlsConn := tls.Server(cconn, &tls.Config{
 		SessionTicketsDisabled: true, // 设置此值为 true ，确保每次都会调用下面的 GetConfigForClient 方法
 		GetConfigForClient: func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
@@ -410,13 +400,6 @@ func (a *attacker) httpsLazyAttack(ctx context.Context, cconn net.Conn, req *htt
 
 func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	proxy := a.proxy
-
-	log := log.WithFields(log.Fields{
-		"in":     "Proxy.attacker.attack",
-		"url":    req.URL,
-		"method": req.Method,
-	})
-
 	reply := func(response *Response, body io.Reader) {
 		if response.Header != nil {
 			for key, value := range response.Header {
@@ -433,19 +416,19 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		if body != nil {
 			_, err := io.Copy(res, body)
 			if err != nil {
-				logErr(log, err)
+				logErr(err)
 			}
 		}
 		if response.BodyReader != nil {
 			_, err := io.Copy(res, response.BodyReader)
 			if err != nil {
-				logErr(log, err)
+				logErr(err)
 			}
 		}
 		if response.Body != nil && len(response.Body) > 0 {
 			_, err := res.Write(response.Body)
 			if err != nil {
-				logErr(log, err)
+				logErr(err)
 			}
 		}
 	}
@@ -544,7 +527,7 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		proxyRes, err = f.ConnContext.ServerConn.client.Do(proxyReq)
 	}
 	if err != nil {
-		logErr(log, err)
+		logErr(err)
 		res.WriteHeader(502)
 		return
 	}

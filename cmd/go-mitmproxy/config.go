@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 func loadConfigFromFile(filename string) (*Config, error) {

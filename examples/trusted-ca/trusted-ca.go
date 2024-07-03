@@ -9,7 +9,7 @@ import (
 	"github.com/golang/groupcache/lru"
 	"github.com/golang/groupcache/singleflight"
 	"github.com/lqqyt2423/go-mitmproxy/cert"
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 )
 
 type TrustedCA struct {

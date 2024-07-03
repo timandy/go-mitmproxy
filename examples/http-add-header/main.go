@@ -3,7 +3,7 @@ package main
 import (
 	"strconv"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 
 	"github.com/lqqyt2423/go-mitmproxy/proxy"
 )

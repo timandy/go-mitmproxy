@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/lqqyt2423/go-mitmproxy/log"
 	"github.com/lqqyt2423/go-mitmproxy/proxy"
-	log "github.com/sirupsen/logrus"
 )
 
 //

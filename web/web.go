@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/lqqyt2423/go-mitmproxy/log"
 	"github.com/lqqyt2423/go-mitmproxy/proxy"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:embed client/build
@@ -63,7 +63,7 @@ func NewWebAddon(addr string) *WebAddon {
 func (web *WebAddon) echo(w http.ResponseWriter, r *http.Request) {
 	c, err := web.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("upgrade:", err)
+		log.Info("upgrade:", err)
 		return
 	}
 
