@@ -68,26 +68,39 @@ func (c *wrapClientConn) Read(data []byte) (int, error) {
 
 func (c *wrapClientConn) Close() error {
 	c.closeMu.Lock()
+	defer c.closeMu.Unlock()
+
+	//已关闭， 直接返回
 	if c.closed {
-		c.closeMu.Unlock()
 		return c.closeErr
 	}
+
+	//记录日志
 	log.Debug("in wrapClientConn close", c.connCtx.ClientConn.Conn.RemoteAddr())
 
+	//关闭与客户端的底层连接
 	c.closed = true
 	c.closeErr = c.Conn.Close()
-	c.closeMu.Unlock()
 	close(c.closeChan)
 
+	//触发事件
 	for _, addon := range c.proxy.Addons {
 		addon.ClientDisconnected(c.connCtx.ClientConn)
 	}
 
+	//调用 wrapServerConn.Close()
 	if c.connCtx.ServerConn != nil && c.connCtx.ServerConn.Conn != nil {
-		c.connCtx.ServerConn.Conn.Close()
+		_ = c.connCtx.ServerConn.Conn.Close()
 	}
 
 	return c.closeErr
+}
+
+func (c *wrapClientConn) CloseRead() error {
+	if tc, ok := c.Conn.(*net.TCPConn); ok && tc != nil {
+		return tc.CloseRead()
+	}
+	return nil
 }
 
 // wrap tcpConn for remote server
@@ -103,26 +116,37 @@ type wrapServerConn struct {
 
 func (c *wrapServerConn) Close() error {
 	c.closeMu.Lock()
+	defer c.closeMu.Unlock()
+
+	//已关闭, 直接返回
 	if c.closed {
-		c.closeMu.Unlock()
 		return c.closeErr
 	}
-	log.Debug("in wrapServerConn close", c.connCtx.ClientConn.Conn.RemoteAddr())
 
+	//记录日志
+	cconn := c.connCtx.ClientConn
+	if cconn != nil {
+		log.Debug("in wrapServerConn close", cconn.Conn.RemoteAddr())
+	}
+
+	//关闭与远端服务器的底层连接
 	c.closed = true
 	c.closeErr = c.Conn.Close()
-	c.closeMu.Unlock()
 
+	//触发事件
 	for _, addon := range c.proxy.Addons {
 		addon.ServerDisconnected(c.connCtx)
 	}
 
-	if !c.connCtx.ClientConn.Tls {
-		c.connCtx.ClientConn.Conn.(*wrapClientConn).Conn.(*net.TCPConn).CloseRead()
-	} else {
-		// if keep-alive connection close
-		if !c.connCtx.closeAfterResponse {
-			c.connCtx.ClientConn.Conn.Close()
+	//关闭客户端连接, 不能直接调用 wrapClientConn.Close(), 会造成死循环
+	if cconn != nil {
+		if !cconn.Tls {
+			if wcc, ok := cconn.Conn.(*wrapClientConn); ok && wcc != nil {
+				_ = wcc.CloseRead()
+			}
+		} else if !c.connCtx.closeAfterResponse {
+			// if keep-alive connection close
+			_ = cconn.Conn.Close()
 		}
 	}
 

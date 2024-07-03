@@ -14,7 +14,7 @@ import (
 // client connection
 type ClientConn struct {
 	Id                 uuid.UUID
-	Conn               net.Conn
+	Conn               net.Conn //*wrapClientConn
 	Tls                bool
 	NegotiatedProtocol string
 	UpstreamCert       bool // Connect to upstream server to look up certificate details. Default: True
@@ -42,7 +42,7 @@ func (c *ClientConn) MarshalJSON() ([]byte, error) {
 type ServerConn struct {
 	Id      uuid.UUID
 	Address string
-	Conn    net.Conn
+	Conn    net.Conn //*wrapServerConn
 
 	client   *http.Client
 	tlsConn  *tls.Conn
