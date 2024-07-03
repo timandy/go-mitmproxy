@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // flow http request
@@ -115,7 +115,7 @@ type Flow struct {
 
 func newFlow() *Flow {
 	return &Flow{
-		Id:   uuid.NewV4(),
+		Id:   uuid.New(),
 		done: make(chan struct{}),
 	}
 }
