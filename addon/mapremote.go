@@ -85,7 +85,7 @@ type MapRemote struct {
 	Enable bool
 }
 
-func (mr *MapRemote) Requestheaders(f *proxy.Flow) {
+func (mr *MapRemote) Request(f *proxy.Flow) {
 	if !mr.Enable {
 		return
 	}

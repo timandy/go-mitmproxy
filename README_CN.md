@@ -129,23 +129,11 @@ type Addon interface {
 	// 与服务器的TLS握手已成功完成。
 	TlsEstablishedServer(*ConnContext)
 
-	// HTTP请求头已成功读取。此时，请求体为空。
-	Requestheaders(*Flow)
-
 	// 完整的HTTP请求已被读取。
 	Request(*Flow)
 
-	// HTTP响应头已成功读取。此时，响应体为空。
-	Responseheaders(*Flow)
-
 	// 完整的HTTP响应已被读取。
 	Response(*Flow)
-
-	// 流式请求体修改器
-	StreamRequestModifier(*Flow, io.Reader) io.Reader
-
-	// 流式响应体修改器
-	StreamResponseModifier(*Flow, io.Reader) io.Reader
 }
 ```
 

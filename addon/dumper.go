@@ -34,7 +34,7 @@ func NewDumperWithFilename(filename string, level int) *Dumper {
 	return NewDumper(out, level)
 }
 
-func (d *Dumper) Requestheaders(f *proxy.Flow) {
+func (d *Dumper) Request(f *proxy.Flow) {
 	go func() {
 		<-f.Done()
 		d.dump(f)

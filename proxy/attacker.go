@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"io"
@@ -401,7 +400,7 @@ func (a *attacker) httpsLazyAttack(ctx context.Context, cconn net.Conn, req *htt
 
 func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	proxy := a.proxy
-	reply := func(response *Response, body io.Reader) {
+	reply := func(response *Response) {
 		if response.Header != nil {
 			for key, value := range response.Header {
 				for _, v := range value {
@@ -413,13 +412,6 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 			res.Header().Add("Connection", "close")
 		}
 		res.WriteHeader(response.StatusCode)
-
-		if body != nil {
-			_, err := io.Copy(res, body)
-			if err != nil {
-				logErr(err)
-			}
-		}
 		if response.BodyReader != nil {
 			_, err := io.Copy(res, response.BodyReader)
 			if err != nil {
@@ -452,53 +444,32 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 
 	f.ConnContext.FlowCount.Add(1)
 
+	//请求开始
+	for _, addon := range proxy.Addons {
+		addon.BeginFlow(f)
+	}
+	defer func() {
+		//响应完成
+		for _, addon := range proxy.Addons {
+			addon.EndFlow(f)
+		}
+	}()
+
+	// read host, scheme
 	rawReqUrlHost := f.Request.URL.Host
 	rawReqUrlScheme := f.Request.URL.Scheme
 
-	// trigger addon event Requestheaders
+	// trigger addon event Request
 	for _, addon := range proxy.Addons {
-		addon.Requestheaders(f)
+		addon.Request(f)
 		if f.Response != nil {
-			reply(f.Response, nil)
+			reply(f.Response)
 			return
 		}
-	}
-
-	// Read request body
-	var reqBody io.Reader = req.Body
-	if !f.Stream {
-		reqBuf, r, err := helper.ReaderToBuffer(req.Body, proxy.Opts.StreamLargeBodies)
-		reqBody = r
-		if err != nil {
-			log.Error(err)
-			res.WriteHeader(502)
-			return
-		}
-
-		if reqBuf == nil {
-			log.Warnf("request body size >= %v\n", proxy.Opts.StreamLargeBodies)
-			f.Stream = true
-		} else {
-			f.Request.Body = reqBuf
-
-			// trigger addon event Request
-			for _, addon := range proxy.Addons {
-				addon.Request(f)
-				if f.Response != nil {
-					reply(f.Response, nil)
-					return
-				}
-			}
-			reqBody = bytes.NewReader(f.Request.Body)
-		}
-	}
-
-	for _, addon := range proxy.Addons {
-		reqBody = addon.StreamRequestModifier(f, reqBody)
 	}
 
 	proxyReqCtx := context.WithValue(req.Context(), proxyReqCtxKey, req)
-	proxyReq, err := http.NewRequestWithContext(proxyReqCtx, f.Request.Method, f.Request.URL.String(), reqBody)
+	proxyReq, err := http.NewRequestWithContext(proxyReqCtx, f.Request.Method, f.Request.URL.String(), req.Body)
 	if err != nil {
 		log.Error(err)
 		res.WriteHeader(502)
@@ -541,48 +512,17 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		f.ConnContext.closeAfterResponse = true
 	}
 
-	defer proxyRes.Body.Close()
-
 	f.Response = &Response{
 		StatusCode: proxyRes.StatusCode,
 		Header:     proxyRes.Header,
+		BodyReader: proxyRes.Body,
 		close:      proxyRes.Close,
 	}
 
-	// trigger addon event Responseheaders
+	// trigger addon event Response
 	for _, addon := range proxy.Addons {
-		addon.Responseheaders(f)
-		if f.Response.Body != nil {
-			reply(f.Response, nil)
-			return
-		}
+		addon.Response(f)
 	}
 
-	// Read response body
-	var resBody io.Reader = proxyRes.Body
-	if !f.Stream {
-		resBuf, r, err := helper.ReaderToBuffer(proxyRes.Body, proxy.Opts.StreamLargeBodies)
-		resBody = r
-		if err != nil {
-			log.Error(err)
-			res.WriteHeader(502)
-			return
-		}
-		if resBuf == nil {
-			log.Warnf("response body size >= %v\n", proxy.Opts.StreamLargeBodies)
-			f.Stream = true
-		} else {
-			f.Response.Body = resBuf
-
-			// trigger addon event Response
-			for _, addon := range proxy.Addons {
-				addon.Response(f)
-			}
-		}
-	}
-	for _, addon := range proxy.Addons {
-		resBody = addon.StreamResponseModifier(f, resBody)
-	}
-
-	reply(f.Response, resBody)
+	reply(f.Response)
 }

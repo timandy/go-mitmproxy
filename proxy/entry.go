@@ -207,11 +207,6 @@ func (e *entry) handleConnect(res http.ResponseWriter, req *http.Request) {
 	f.ConnContext.Intercept = shouldIntercept
 	defer f.finish()
 
-	// trigger addon event Requestheaders
-	for _, addon := range proxy.Addons {
-		addon.Requestheaders(f)
-	}
-
 	if !shouldIntercept {
 		log.Debugf("begin transpond %v", req.Host)
 		e.directTransfer(res, req, f)
@@ -242,11 +237,6 @@ func (e *entry) establishConnection(res http.ResponseWriter, f *Flow) (net.Conn,
 	f.Response = &Response{
 		StatusCode: 200,
 		Header:     make(http.Header),
-	}
-
-	// trigger addon event Responseheaders
-	for _, addon := range e.proxy.Addons {
-		addon.Responseheaders(f)
 	}
 
 	return cconn, nil
