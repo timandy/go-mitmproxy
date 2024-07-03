@@ -7,6 +7,10 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/lqqyt2423/go-mitmproxy/cert"
 	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
@@ -21,12 +25,15 @@ type Options struct {
 	CaRootPath        string
 	NewCaFunc         func() (cert.CA, error) //创建 Ca 的函数
 	Upstream          string
+	ShutdownTimeout   time.Duration // 服务关闭超时时间
 }
 
 type Proxy struct {
-	Opts    *Options
-	Version string
-	Addons  []Addon
+	Opts      *Options
+	Version   string
+	Addons    []Addon
+	errorChan chan error
+	quitChan  chan os.Signal
 
 	entry           *entry
 	attacker        *attacker
@@ -43,9 +50,11 @@ func NewProxy(opts *Options) (*Proxy, error) {
 	}
 
 	proxy := &Proxy{
-		Opts:    opts,
-		Version: "1.8.5",
-		Addons:  make([]Addon, 0),
+		Opts:      opts,
+		Version:   "1.8.5",
+		Addons:    make([]Addon, 0),
+		errorChan: make(chan error, 1),
+		quitChan:  make(chan os.Signal, 1),
 	}
 
 	proxy.entry = newEntry(proxy)
@@ -63,13 +72,71 @@ func (proxy *Proxy) AddAddon(addon Addon) {
 	proxy.Addons = append(proxy.Addons, addon)
 }
 
-func (proxy *Proxy) Start() error {
+func (proxy *Proxy) Start() {
+	// release resources
+	defer func() {
+		close(proxy.errorChan)
+		close(proxy.quitChan)
+	}()
+
+	// start attack
 	go func() {
-		if err := proxy.attacker.start(); err != nil {
-			log.Error(err)
+		if err := proxy.StartAttack(); err != nil {
+			log.Errorf("Attack failed to start, %v", err)
 		}
 	}()
-	return proxy.entry.start()
+
+	// start proxy
+	go func() {
+		log.Info("Proxy is starting...")
+		ln, err := proxy.Listen()
+		if err != nil {
+			proxy.errorChan <- err
+			return
+		}
+		log.Infof("Proxy already listen at %v", ln.Addr().(*net.TCPAddr).Port)
+		proxy.errorChan <- proxy.Serve(ln)
+	}()
+
+	// wait for quit signal
+	signal.Notify(proxy.quitChan, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case startErr := <-proxy.errorChan:
+		log.Errorf("Proxy failed to start, %v", startErr)
+	case <-proxy.quitChan:
+		log.Info("Proxy is shutting down...")
+		var shutdownCtx context.Context
+		if proxy.Opts.ShutdownTimeout > 0 {
+			ctx, cancel := context.WithTimeout(context.Background(), proxy.Opts.ShutdownTimeout)
+			defer cancel()
+			shutdownCtx = ctx
+		} else {
+			shutdownCtx = context.Background()
+		}
+		shutdownErr := proxy.Shutdown(shutdownCtx)
+		if shutdownErr != nil {
+			_ = proxy.Close()
+			log.Errorf("Proxy already forced shutdown, %v", shutdownErr)
+			return
+		}
+		log.Info("Proxy already shutdown")
+	}
+}
+
+func (proxy *Proxy) Stop() {
+	proxy.quitChan <- syscall.SIGTERM
+}
+
+func (proxy *Proxy) StartAttack() error {
+	return proxy.attacker.start()
+}
+
+func (proxy *Proxy) Listen() (net.Listener, error) {
+	return proxy.entry.listen()
+}
+
+func (proxy *Proxy) Serve(ln net.Listener) error {
+	return proxy.entry.serve(ln)
 }
 
 func (proxy *Proxy) Close() error {

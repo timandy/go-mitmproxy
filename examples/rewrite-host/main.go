@@ -35,5 +35,5 @@ func main() {
 	p.AddAddon(&RewriteHost{})
 	p.AddAddon(&proxy.LogAddon{})
 
-	log.Fatal(p.Start())
+	p.Start()
 }

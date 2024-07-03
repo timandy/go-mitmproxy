@@ -54,5 +54,5 @@ func main() {
 	p.AddAddon(&CloseConn{})
 	p.AddAddon(&proxy.LogAddon{})
 
-	log.Fatal(p.Start())
+	p.Start()
 }

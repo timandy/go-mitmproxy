@@ -146,17 +146,15 @@ func newEntry(proxy *Proxy) *entry {
 	return e
 }
 
-func (e *entry) start() error {
+func (e *entry) listen() (net.Listener, error) {
 	addr := e.server.Addr
 	if addr == "" {
 		addr = ":http"
 	}
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
+	return net.Listen("tcp", addr)
+}
 
-	log.Infof("Proxy start listen at %v\n", e.server.Addr)
+func (e *entry) serve(ln net.Listener) error {
 	pln := &wrapListener{
 		Listener: ln,
 		proxy:    e.proxy,

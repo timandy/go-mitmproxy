@@ -31,5 +31,5 @@ func main() {
 
 	p.AddAddon(&AddHeader{})
 
-	log.Fatal(p.Start())
+	p.Start()
 }

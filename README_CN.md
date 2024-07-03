@@ -102,7 +102,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Fatal(p.Start())
+	p.Start()
 }
 ```
 

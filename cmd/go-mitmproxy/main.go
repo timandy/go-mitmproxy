@@ -114,5 +114,5 @@ func main() {
 		p.AddAddon(dumper)
 	}
 
-	log.Fatal(p.Start())
+	p.Start()
 }

@@ -40,5 +40,5 @@ func main() {
 
 	p.AddAddon(&ChangeHtml{})
 
-	log.Fatal(p.Start())
+	p.Start()
 }
