@@ -258,7 +258,7 @@ func (e *entry) directTransfer(res http.ResponseWriter, req *http.Request, f *Fl
 	proxy := e.proxy
 	conn, err := proxy.getUpstreamConn(req.Context(), req)
 	if err != nil {
-		log.Error(err)
+		log.Debug(err)
 		res.WriteHeader(502)
 		return
 	}
@@ -266,7 +266,7 @@ func (e *entry) directTransfer(res http.ResponseWriter, req *http.Request, f *Fl
 
 	cconn, err := e.establishConnection(res, f)
 	if err != nil {
-		log.Error(err)
+		log.Debug(err)
 		return
 	}
 	defer cconn.Close()
