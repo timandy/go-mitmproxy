@@ -31,14 +31,14 @@ var defaultWebSocket webSocket
 func (s *webSocket) wss(res http.ResponseWriter, req *http.Request) {
 	upgradeBuf, err := httputil.DumpRequest(req, false)
 	if err != nil {
-		log.Errorf("DumpRequest: %v\n", err)
+		log.Errorf("DumpRequest: %v", err)
 		res.WriteHeader(502)
 		return
 	}
 
 	cconn, _, err := res.(http.Hijacker).Hijack()
 	if err != nil {
-		log.Errorf("Hijack: %v\n", err)
+		log.Errorf("Hijack: %v", err)
 		res.WriteHeader(502)
 		return
 	}
@@ -50,14 +50,14 @@ func (s *webSocket) wss(res http.ResponseWriter, req *http.Request) {
 	}
 	conn, err := tls.Dial("tcp", host, nil)
 	if err != nil {
-		log.Errorf("tls.Dial: %v\n", err)
+		log.Errorf("tls.Dial: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	_, err = conn.Write(upgradeBuf)
 	if err != nil {
-		log.Errorf("wss upgrade: %v\n", err)
+		log.Errorf("wss upgrade: %v", err)
 		return
 	}
 	transfer(conn, cconn)

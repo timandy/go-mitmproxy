@@ -52,7 +52,7 @@ func NewWebAddon(addr string) *WebAddon {
 	web.conns = make([]*concurrentConn, 0)
 
 	go func() {
-		log.Infof("web interface start listen at %v\n", addr)
+		log.Infof("web interface start listen at %v", addr)
 		err := web.server.ListenAndServe()
 		log.Error(err)
 	}()

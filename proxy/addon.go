@@ -68,23 +68,23 @@ type LogAddon struct {
 }
 
 func (addon *LogAddon) ClientConnected(client *ClientConn) {
-	log.Infof("%v client connect\n", client.Conn.RemoteAddr())
+	log.Infof("%v client connect", client.Conn.RemoteAddr())
 }
 
 func (addon *LogAddon) ClientDisconnected(client *ClientConn) {
-	log.Infof("%v client disconnect\n", client.Conn.RemoteAddr())
+	log.Infof("%v client disconnect", client.Conn.RemoteAddr())
 }
 
 func (addon *LogAddon) ServerConnected(connCtx *ConnContext) {
-	log.Infof("%v server connect %v (%v->%v)\n", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr())
+	log.Infof("%v server connect %v (%v->%v)", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr())
 }
 
 func (addon *LogAddon) ServerDisconnected(connCtx *ConnContext) {
-	log.Infof("%v server disconnect %v (%v->%v) - %v\n", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr(), connCtx.FlowCount.Load())
+	log.Infof("%v server disconnect %v (%v->%v) - %v", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr(), connCtx.FlowCount.Load())
 }
 
 func (addon *LogAddon) Requestheaders(f *Flow) {
-	log.Debugf("%v Requestheaders %v %v\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String())
+	log.Debugf("%v Requestheaders %v %v", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String())
 	start := time.Now()
 	go func() {
 		<-f.Done()
@@ -96,7 +96,7 @@ func (addon *LogAddon) Requestheaders(f *Flow) {
 		if f.Response != nil && f.Response.Body != nil {
 			contentLen = len(f.Response.Body)
 		}
-		log.Infof("%v %v %v %v %v - %v ms\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String(), StatusCode, contentLen, time.Since(start).Milliseconds())
+		log.Infof("%v %v %v %v %v - %v ms", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String(), StatusCode, contentLen, time.Since(start).Milliseconds())
 	}()
 }
 
