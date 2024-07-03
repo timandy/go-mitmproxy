@@ -425,6 +425,10 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				logErr(err)
 			}
+			// close the reader
+			if closer, ok := response.BodyReader.(io.Closer); ok {
+				_ = closer.Close()
+			}
 		}
 		if response.Body != nil && len(response.Body) > 0 {
 			_, err := res.Write(response.Body)
